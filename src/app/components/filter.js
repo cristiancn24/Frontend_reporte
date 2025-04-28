@@ -1,8 +1,9 @@
 "use client";
 import { useState } from 'react';
 import { Calendar } from 'primereact/calendar';
+import { Button } from 'primereact/button';
 
-const DateFilter = ({ onFilterApply }) => {
+const DateFilter = ({ onFilterApply, dt }) => {
     const [dateRange, setDateRange] = useState(null);
     const [date, setDate] = useState(null);
 
@@ -26,6 +27,12 @@ const DateFilter = ({ onFilterApply }) => {
         }
 
         onFilterApply(filters);
+    };
+
+    const handleExport = () => {
+        if (dt && dt.current) {
+            dt.current.exportCSV({fileName: 'soportes.csv'});
+        }
     };
 
     return (
@@ -60,13 +67,24 @@ const DateFilter = ({ onFilterApply }) => {
                 </div>
             </div>
             
-            <div>
-                <button 
-                    className="p-button p-button-sm"
+            <div className="flex gap-2">
+                <Button 
+                    icon="pi pi-filter"
+                    className="p-button-sm"
                     onClick={handleApply}
-                >
-                    <i className="pi pi-filter"></i> 
-                </button>
+                    tooltip='Filtrar'
+                    tooltipOptions={{ position: 'bottom' }}
+                />
+
+                <Button 
+                    icon="pi pi-file-export"
+                    className="p-button-sm p-button-success"
+                    onClick={handleExport}
+                    tooltip="Exportar a CSV"
+                    tooltipOptions={{ position: 'bottom' }}
+                    disabled={!dt?.current}
+                />
+                
             </div>
         </div>
     );

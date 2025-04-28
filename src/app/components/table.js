@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { PrimeReactProvider } from 'primereact/api';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
@@ -22,6 +22,7 @@ const formatMinutesToTime = (minutes) => {
 };
 
 export default function Table({onSoporteSelect, onStatsCalculated}) {
+    const dt = useRef(null);
     const [soportes, setSoportes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedSoporte, setSelectedSoporte] = useState(null);
@@ -113,7 +114,7 @@ export default function Table({onSoporteSelect, onStatsCalculated}) {
     return (
         <PrimeReactProvider>
             <div className="flex flex-col gap-4">
-                <DateFilter onFilterApply={handleFilterApply} />
+                <DateFilter onFilterApply={handleFilterApply}  dt={dt}/>
                 
                 <div className="card justify-center mt-4">
                     {error && (
@@ -134,6 +135,7 @@ export default function Table({onSoporteSelect, onStatsCalculated}) {
                         scrollHeight="70vh"
                         tableStyle={{ minWidth: '50rem' }}
                         emptyMessage="No se encontraron registros"
+                        ref={dt}
                     >
                         <Column field="name" header="Nombre" sortable></Column>
                         <Column field="abiertos" header="Tickets Abiertos" sortable></Column>
