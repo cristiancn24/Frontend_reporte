@@ -107,6 +107,7 @@ export default function Table({onSoporteSelect, onStatsCalculated}) {
         }
     };
 
+
     const handleFilterApply = (newFilters) => {
         setFilters(newFilters);
     };
