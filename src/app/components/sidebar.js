@@ -17,7 +17,7 @@ export default function Sidebar() {
     };
 
     return (
-        <div className="w-[250px] bg-[#1f7a8c] h-screen flex flex-col fixed z-50">
+        <div className="w-[275px] bg-[#1f7a8c] h-screen flex flex-col fixed z-50">
             {/* Logo y título */}
             <div className="flex items-center p-4 border-b border-[#4da1b9]">
                 <img
