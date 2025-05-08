@@ -25,14 +25,14 @@ export default function RootLayout({ children }) {
                 {children}
               </div>
             ) : (
-              //<RequireAuth>
+              <RequireAuth>
                 <div className="min-h-screen bg-gray-50 flex">
                   <Sidebar />
                   <main className="flex-1 p-4 md:p-6 ml-0 md:ml-[275px] mt-0 w-[calc(100%-250px)]">
                     {children}
                   </main>
                 </div>
-              //</RequireAuth>
+              </RequireAuth>
             )}
           </SessionProvider>
         </PrimeReactProvider>

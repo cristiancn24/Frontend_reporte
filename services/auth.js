@@ -24,6 +24,7 @@ export const authOptions = {
             id: user.id,
             email: user.email,
             name: `${user.nombre} ${user.apellido}`,
+            role_id: user.role_id, // Asegúrate de que este campo esté en la respuesta del backend
             ...user // Incluye todos los datos adicionales
           };
         }

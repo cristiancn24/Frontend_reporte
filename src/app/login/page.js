@@ -34,7 +34,7 @@ export default function Login() {
   };
 
   return (
-    <div className="relative min-h-screen flex justify-center">
+    <div className="relative min-h-[700px] max-h-[90vh] h-auto flex justify-center">
       {/* Fondo con imagen */}
       <div 
         className="fixed inset-0 bg-[url('/assets/fondo_pasaportes.png')] bg-cover bg-center bg-no-repeat z-0"
@@ -125,7 +125,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className={`w-full py-3 px-4 rounded-lg font-semibold text-white transition-colors duration-200 ${
+                className={`w-full py-3 px-4 mt-10 rounded-lg font-semibold text-white transition-colors duration-200 ${
                   isLoading 
                     ? 'bg-blue-400 cursor-not-allowed' 
                     : 'bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'

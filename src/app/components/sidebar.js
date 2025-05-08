@@ -3,18 +3,40 @@ import React from 'react';
 import { BiSolidHome } from "react-icons/bi";
 import { IoTicketSharp } from "react-icons/io5";
 import { Avatar } from "@mui/material";
-import { PiSignOutBold } from "react-icons/pi";
 import { useRouter, usePathname } from "next/navigation";
+import { useSession } from 'next-auth/react'; // Importa useSession
+import LogoutButton from './LogoutButton';
+import { getRoleName } from '../utils/roles';
 
 export default function Sidebar() {
     const router = useRouter();
     const pathname = usePathname();
+    const { data: session, status } = useSession(); // Obtiene la sesión
     
     const isActive = (path) => pathname.startsWith(path);
 
     const handleNavigation = (path) => {
         router.push(path);
     };
+
+     // Lógica para mostrar datos del usuario (igual que en Bar.js)
+     const getUserData = () => {
+        if (status === 'authenticated' && session?.user) {
+          const user = session.user;
+          return {
+            displayName: user.nombre && user.apellido 
+              ? `${user.nombre} ${user.apellido}`
+              : user.email?.split('@')[0] || 'Usuario',
+            role: user.role_id ? getRoleName(user.role_id) : 'Rol no definido'
+          };
+        }
+        return {
+          displayName: 'Invitado',
+          role: ' '
+        };
+      };
+
+    const userData = getUserData();
 
     return (
         <div className="w-[275px] bg-[#1f7a8c] h-screen flex flex-col fixed z-50">
@@ -56,15 +78,12 @@ export default function Sidebar() {
                 <div className="flex items-center">
                     <Avatar className="!w-8 !h-8" />
                     <div className="ml-3 min-w-0">
-                        <p className="text-sm font-medium text-white truncate">Usuario</p>
-                        <p className="text-xs text-gray-200 truncate">Rol</p>
+                        <p className="text-sm font-bold text-white truncate">{userData.displayName}</p>
+                        <p className="text-xs text-gray-200 truncate">{userData.role}</p>
                     </div>
-                    <button 
-                        onClick={() => handleNavigation('/login')}
-                        className="ml-auto p-1 text-white hover:text-gray-200"
-                    >
-                        <PiSignOutBold className="w-5 h-5" />
-                    </button>
+                    <div className="ml-auto">
+                        <LogoutButton className="text-white hover:text-gray-200" />
+                    </div>
                 </div>
             </div>
         </div>
