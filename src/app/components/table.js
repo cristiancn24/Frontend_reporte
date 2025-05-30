@@ -31,33 +31,43 @@ export default function Table({onSoporteSelect, onStatsCalculated}) {
 
     const fetchSoportes = async (filters = {}) => {
         try {
-            setLoading(true);
-            const params = {};
+        setLoading(true);
+        const params = new URLSearchParams();
+        
+        // Manejo de fechas
+        if (filters.range && filters.range[0] && filters.range[1]) {
+            params.append('startDate', filters.range[0].toISOString());
+            params.append('endDate', filters.range[1].toISOString());
+        } else if (filters.singleDate) {
+            const date = new Date(filters.singleDate);
+            const nextDay = new Date(date);
+            nextDay.setDate(date.getDate() + 1);
             
-            // Si no hay filtros específicos, aplica el de últimos 30 días
-            if (!filters.range && !filters.singleDate) {
-                const endDate = new Date();
-                const startDate = new Date();
-                startDate.setDate(endDate.getDate() - 30);
-                params.fechaInicio = startDate.toISOString();
-                params.fechaFin = endDate.toISOString();
-            } else {
-                // Usa los filtros proporcionados si existen
-                if (filters.range && filters.range[0] && filters.range[1]) {
-                    params.fechaInicio = filters.range[0].toISOString();
-                    params.fechaFin = filters.range[1].toISOString();
-                } else if (filters.singleDate) {
-                    params.fecha = filters.singleDate.toISOString();
-                }
-            }
-
-            const response = await axios.get('http://localhost:4000/api/users/soportes/estadisticas', { params });
-
-            if (!response.data?.success || !Array.isArray(response.data.data)) {
-                throw new Error('Formato de respuesta inválido');
-            }
+            params.append('startDate', date.toISOString());
+            params.append('endDate', nextDay.toISOString());
+        } else {
+            // Filtro por defecto (últimos 30 días)
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setDate(endDate.getDate() - 30);
             
-            const formattedData = response.data.data.map(item => ({
+            params.append('startDate', startDate.toISOString());
+            params.append('endDate', endDate.toISOString());
+        }
+
+        const response = await axios.get('http://localhost:4000/api/users/estadisticas', { params });
+            
+            
+            const responseData = Array.isArray(response.data) ? {
+  success: true,
+  data: response.data
+} : response.data;
+
+if (!responseData.success || !Array.isArray(responseData.data)) {
+  throw new Error('Formato de respuesta inválido');
+}
+            
+            const formattedData = responseData.data.map(item => ({
                 id: item.id,
                 name: `${item.first_name} ${item.last_name}`.trim(),
                 abiertos: item.ticketsAbiertos || 0,
