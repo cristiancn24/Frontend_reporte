@@ -1,13 +1,12 @@
-// components/LogoutButton.js
 "use client";
-import { useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { Button } from 'primereact/button';
-import { Dialog } from 'primereact/dialog';
-import { Toast } from 'primereact/toast';
-import { signOut } from 'next-auth/react';
+import { signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useState, useRef } from "react";
+import { Toast } from "primereact/toast";
+import { Button } from "primereact/button";
+import { Dialog } from "primereact/dialog";
 
-export default function LogoutButton() {
+export default function LogoutButton({ className = "" }) {
   const router = useRouter();
   const toastRef = useRef(null);
   const [visible, setVisible] = useState(false);
@@ -15,85 +14,86 @@ export default function LogoutButton() {
 
   const handleLogout = async () => {
     setLoading(true);
+    setVisible(false); // Cerrar diálogo inmediatamente
+
     try {
-      // Opcional: Llamar al backend para invalidar el token
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        }
-      });
-      
-      // Cerrar sesión con NextAuth
-      await signOut({ redirect: false });
-      
-      // Mostrar feedback
-      toastRef.current.show({
+      // 1. Mostrar Toast primero
+      toastRef.current?.show({
         severity: 'success',
         summary: 'Sesión cerrada',
-        detail: 'Has salido correctamente del sistema',
-        life: 3000
+        detail: 'Has salido del sistema correctamente',
+        life: 9000
       });
-      
-      // Redirigir después de un breve retraso
-      setTimeout(() => router.push('/login'), 1000);
+
+      // 2. Esperar 500ms para asegurar que el Toast se muestra
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // 3. Cerrar sesión (sin esperar, se ejecuta en segundo plano)
+      signOut({ redirect: false }).catch(console.error);
+
+      // 4. Redirigir después de 7 segundos (tiempo del Toast)
+      setTimeout(() => {
+        router.push('/login');
+      }, 9000);
+
     } catch (error) {
-      toastRef.current.show({
+      console.error('Error:', error);
+      toastRef.current?.show({
         severity: 'error',
         summary: 'Error',
-        detail: 'Ocurrió un problema al cerrar sesión',
-        life: 3000
+        detail: 'Ocurrió un problema',
+        life: 9000
       });
-      console.error('Logout error:', error);
     } finally {
       setLoading(false);
-      setVisible(false);
     }
   };
 
-  const footerContent = (
-    <div>
-      <Button 
-        label="Cancelar" 
-        icon="pi pi-times" 
-        onClick={() => setVisible(false)} 
-        className="p-button-text" 
+  const dialogFooter = (
+    <div className="flex justify-end gap-2">
+      <Button
+        label="Cancelar"
+        icon="pi pi-times"
+        onClick={() => setVisible(false)}
+        className="p-button-text"
         disabled={loading}
       />
-      <Button 
-        label={loading ? 'Cerrando sesión...' : 'Sí, cerrar sesión'} 
-        icon={loading ? 'pi pi-spinner pi-spin' : 'pi pi-check'} 
-        onClick={handleLogout} 
-        autoFocus 
-        loading={loading}
+      <Button
+        label={loading ? 'Cerrando...' : 'Confirmar'}
+        icon={loading ? 'pi pi-spinner pi-spin' : 'pi pi-check'}
+        onClick={handleLogout}
         className={loading ? 'p-button-secondary' : 'p-button-danger'}
+        disabled={loading}
+        autoFocus
       />
     </div>
   );
 
   return (
     <>
-      <Toast ref={toastRef} position="top-right" />
-      
+      <Toast ref={toastRef} position="top-center" />
+
       <Button
         icon="pi pi-sign-out"
-        className="p-button-text p-button-danger"
+        className={`p-button-text p-button-danger ${className}`}
         onClick={() => setVisible(true)}
-        tooltip="Cerrar Sesión"
-        tooltipOptions={{ position: 'bottom' }}
+        tooltip="Cerrar sesión"
+        tooltipOptions={{ position: 'left', mouseTrack: true }}
+        aria-label="Cerrar sesión"
       />
-      
-      <Dialog 
-        header="Confirmar cierre de sesión" 
-        visible={visible} 
-        style={{ width: '30vw' }} 
-        footer={footerContent} 
+
+      <Dialog
+        header="Confirmar cierre"
+        visible={visible}
+        style={{ width: 'min(90vw, 400px)' }}
+        footer={dialogFooter}
         onHide={() => !loading && setVisible(false)}
         closable={!loading}
+        dismissableMask={!loading}
       >
-        <div className="flex align-items-center">
-          <i className="pi pi-exclamation-triangle mr-3" style={{ fontSize: '2rem', color: 'var(--yellow-500)' }} />
-          <span>¿Estás seguro de que deseas cerrar sesión?</span>
+        <div className="flex align-items-center gap-3">
+          <i className="pi pi-exclamation-circle text-2xl text-primary" />
+          <p>¿Estás seguro de salir del sistema?</p>
         </div>
       </Dialog>
     </>

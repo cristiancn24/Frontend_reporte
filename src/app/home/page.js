@@ -1,15 +1,36 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import Table from "../components/table";
 import DoughnutChartDemo from "../components/dchart";
 
 export default function Home() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [generalStats, setGeneralStats] = useState({ abiertos: 0, cerrados: 0 });
   const [selectedSoporte, setSelectedSoporte] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/login');
+    } else if (status === 'authenticated') {
+      setIsLoading(false);
+    }
+  }, [status, router]);
 
   const handleStatsCalculated = (stats) => {
     setGeneralStats(stats);
   };
+
+  if (status === 'loading' || isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">

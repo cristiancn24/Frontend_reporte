@@ -24,8 +24,8 @@ export default function Sidebar() {
         if (status === 'authenticated' && session?.user) {
           const user = session.user;
           return {
-            displayName: user.nombre && user.apellido 
-              ? `${user.nombre} ${user.apellido}`
+            displayName: user.firstName && user.lastName 
+              ? `${user.firstName} ${user.lastName}`
               : user.email?.split('@')[0] || 'Usuario',
             role: user.role_id ? getRoleName(user.role_id) : 'Rol no definido'
           };

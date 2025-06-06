@@ -15,23 +15,36 @@ export default function Login() {
 
   // app/login/page.js
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    
+  e.preventDefault();
+  setError('');
+  setIsLoading(true);
+
+  try {
     const result = await signIn('credentials', {
       redirect: false,
       email,
       password,
-      callbackUrl: '/'
+      callbackUrl: '/home'
     });
 
+    console.log('SignIn result:', result); // Debug
+    
     if (result?.error) {
-      setError(result.error);
+      const errorMap = {
+        "CredentialsSignin": "Credenciales inválidas",
+        "Usuario no encontrado": "Usuario no existe",
+        "Contraseña incorrecta": "Contraseña incorrecta"
+      };
+      setError(errorMap[result.error] || result.error);
     } else {
-      router.push('/');
-      router.refresh();
+      window.location.href = result?.url || '/home';
     }
-  };
+  } catch (err) {
+    setError('Error de conexión con el servidor');
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="relative min-h-[700px] max-h-[90vh] h-auto flex justify-center">
@@ -121,7 +134,6 @@ export default function Login() {
                 </div>
               </div>
 
-              {/* Botón de submit */}
               <button
                 type="submit"
                 disabled={isLoading}

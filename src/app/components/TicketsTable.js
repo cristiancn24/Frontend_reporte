@@ -10,16 +10,48 @@ import { Skeleton } from 'primereact/skeleton';
 import { FilterMatchMode } from 'primereact/api';
 import { TicketService } from '../../../services/apiService';
 
+// Generador de IDs únicos para accesibilidad
+const useUniqueId = (prefix = '') => {
+  const [id] = useState(() => `${prefix}-${Math.random().toString(36).substr(2, 9)}`);
+  return id;
+};
+
+// Componente MultiSelect estrictamente controlado - VERSIÓN CORREGIDA
+const StrictMultiSelect = ({ value, options = [], ...props }) => {
+  const safeValue = Array.isArray(value) ? value : [];
+  return <MultiSelect value={safeValue} options={options} {...props} />;
+};
+
+// Componente InputText estrictamente controlado - VERSIÓN CORREGIDA
+const StrictInputText = ({ value, ...props }) => {
+  return <InputText value={value || ''} {...props} />;
+};
+
+// Componente Calendar estrictamente controlado - VERSIÓN CORREGIDA
+const StrictCalendar = ({ value, ...props }) => {
+  return <Calendar value={value || null} {...props} />;
+};
+
 const TicketsTable = () => {
     const dt = useRef(null);
     const [tickets, setTickets] = useState([]);
     const [loading, setLoading] = useState(true);
     const [totalRecords, setTotalRecords] = useState(0);
     
+    // IDs únicos para accesibilidad
+    const filterIds = {
+      fecha: useUniqueId('fecha'),
+      estado: useUniqueId('estado'),
+      asignado: useUniqueId('asignado'),
+      buscar: useUniqueId('buscar')
+    };
+    
+    // Estados iniciales con valores controlados
     const [statusOptions, setStatusOptions] = useState([]);
     const [assignedUsers, setAssignedUsers] = useState([]);
     const [loadingFilters, setLoadingFilters] = useState(true);
     
+    // Estado de filtros inicializado con valores por defecto
     const [filters, setFilters] = useState({
         estados: { value: [], matchMode: FilterMatchMode.IN },
         asignados: { value: [], matchMode: FilterMatchMode.IN },
@@ -77,7 +109,6 @@ const TicketsTable = () => {
         return () => { isMounted = false };
     }, []);
 
-    // Fetch de tickets
     const fetchTickets = useCallback(async () => {
         if (loadingFilters) return;
         
@@ -115,16 +146,34 @@ const TicketsTable = () => {
         return () => clearTimeout(timer);
     }, [fetchTickets]);
 
-    // Handlers seguros
     const handleFilterChange = (filterName, value) => {
-        setFilters(prev => ({
-            ...prev,
-            [filterName]: {
-                ...prev[filterName],
-                value: value !== undefined ? value : 
-                       (Array.isArray(value) ? [] : null)
+        setFilters(prev => {
+            let safeValue;
+            
+            switch(filterName) {
+                case 'estados':
+                case 'asignados':
+                    safeValue = Array.isArray(value) ? value : [];
+                    break;
+                case 'searchText':
+                    safeValue = typeof value === 'string' ? value : '';
+                    break;
+                case 'fechaExacta':
+                    safeValue = value instanceof Date ? value : null;
+                    break;
+                default:
+                    safeValue = value;
             }
-        }));
+            
+            return {
+                ...prev,
+                [filterName]: {
+                    ...prev[filterName],
+                    value: safeValue
+                }
+            };
+        });
+        
         setPagination(prev => ({ ...prev, page: 1, first: 0 }));
     };
 
@@ -157,8 +206,9 @@ const TicketsTable = () => {
         return (
             <>
                 <div className={filterContainerClass}>
-                    <label className="text-sm text-gray-600">Fecha</label>
-                    <Calendar
+                    <label htmlFor={filterIds.fecha} className="text-sm text-gray-600">Fecha</label>
+                    <StrictCalendar
+                        id={filterIds.fecha}
                         value={filters.fechaExacta.value}
                         onChange={(e) => handleFilterChange('fechaExacta', e.value)}
                         selectionMode="single"
@@ -166,12 +216,14 @@ const TicketsTable = () => {
                         placeholder="dd/mm/aaaa"
                         showIcon
                         className={`${inputClass} [&>input]:h-[2.5rem]`}
+                        disabled={loadingFilters}
                     />
                 </div>
 
                 <div className={filterContainerClass}>
-                    <label className="text-sm text-gray-600">Estado</label>
-                    <MultiSelect
+                    <label htmlFor={filterIds.estado} className="text-sm text-gray-600">Estado</label>
+                    <StrictMultiSelect
+                        id={filterIds.estado}
                         value={filters.estados.value}
                         onChange={(e) => handleFilterChange('estados', e.value)}
                         options={statusOptions}
@@ -182,12 +234,14 @@ const TicketsTable = () => {
                         panelClassName="min-w-[250px]"
                         maxSelectedLabels={1}
                         showClear
+                        disabled={loadingFilters}
                     />
                 </div>
 
                 <div className={filterContainerClass}>
-                    <label className="text-sm text-gray-600">Asignado a</label>
-                    <MultiSelect
+                    <label htmlFor={filterIds.asignado} className="text-sm text-gray-600">Asignado a</label>
+                    <StrictMultiSelect
+                        id={filterIds.asignado}
                         value={filters.asignados.value}
                         onChange={(e) => handleFilterChange('asignados', e.value)}
                         options={assignedUsers}
@@ -198,16 +252,19 @@ const TicketsTable = () => {
                         panelClassName="min-w-[250px]"
                         maxSelectedLabels={1}
                         showClear
+                        disabled={loadingFilters}
                     />
                 </div>
 
                 <div className={filterContainerClass}>
-                    <label className="text-sm text-gray-600">Buscar</label>
-                    <InputText
+                    <label htmlFor={filterIds.buscar} className="text-sm text-gray-600">Buscar</label>
+                    <StrictInputText
+                        id={filterIds.buscar}
                         value={filters.searchText.value}
                         onChange={(e) => handleFilterChange('searchText', e.target.value)}
                         placeholder="Texto..."
                         className={inputClass}
+                        disabled={loadingFilters}
                     />
                 </div>
             </>
@@ -247,13 +304,12 @@ const TicketsTable = () => {
         );
     };
 
-    // Función para limpiar el contenido HTML
     const cleanHtmlContent = (content) => {
         if (!content) return '';
         return String(content)
-            .replace(/<[^>]*>?/gm, '') // Elimina tags HTML
-            .replace(/&[a-z]+;/gi, ' ') // Reemplaza entidades HTML
-            .replace(/\s+/g, ' ') // Reduce múltiples espacios
+            .replace(/<[^>]*>?/gm, '')
+            .replace(/&[a-z]+;/gi, ' ')
+            .replace(/\s+/g, ' ')
             .trim();
     };
 
@@ -311,7 +367,7 @@ const TicketsTable = () => {
                                 {cleanHtmlContent(rowData.comment)}
                             </div>
                         )}
-                        style={{ width: '25%' }} // Ancho fijo para esta columna
+                        style={{ width: '25%' }}
                     />
                     <Column 
                         field="created_by" 
@@ -349,15 +405,30 @@ const TicketsTable = () => {
                             />
                         )} 
                     />
-                    <Column 
+                   <Column 
                         field="created_at" 
                         header="Fecha creación" 
                         sortable 
-                        body={(rowData) => (
-                            <span className="text-sm whitespace-nowrap">
-                                {new Date(rowData.created_at).toLocaleDateString()}
-                            </span>
-                        )}
+                        body={(rowData) => {
+                            const date = new Date(rowData.created_at);
+                            const formattedDate = date.toLocaleDateString('es-ES', {
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric'
+                            });
+                            const formattedTime = date.toLocaleTimeString('es-ES', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: false
+                            });
+                            
+                            return (
+                                <div className="flex flex-col">
+                                    <span className="text-sm">{formattedDate}</span>
+                                    <span className="text-xs text-gray-500">{formattedTime}</span>
+                                </div>
+                            );
+                        }}
                     />
                     <Column 
                         field="resolution_time" 

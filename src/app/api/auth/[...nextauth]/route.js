@@ -1,4 +1,3 @@
-// src/app/api/auth/[...nextauth]/route.js
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
@@ -12,58 +11,37 @@ export const authOptions = {
       },
       async authorize(credentials) {
         try {
-          const res = await fetch("http://localhost:4000/api/users/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
+          console.log('Intentando autenticar con:', credentials.email);
+          
+          const res = await fetch('http://localhost:4000/api/users/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               email: credentials.email,
               password: credentials.password
             })
           });
 
+          const data = await res.json();
+          console.log('Respuesta del backend:', data);
+
           if (!res.ok) {
-            const errorData = await res.json().catch(() => ({}));
-            
-            // Personalizar mensajes según el código de estado
-            let errorMessage;
-            switch(res.status) {
-              case 401:
-                errorMessage = "Credenciales inválidas";
-                break;
-              case 403:
-                errorMessage = "Acceso restringido a administradores";
-                break;
-              case 404:
-                errorMessage = "Usuario no encontrado";
-                break;
-              default:
-                errorMessage = errorData.message || "Error al iniciar sesión";
-            }
-            
-            // Lanzar error con mensaje personalizado
-            throw new Error(errorMessage);
+            throw new Error(data.error || 'Error de autenticación');
           }
 
-          const user = await res.json();
-          
-          if (user && user.token) {
-            return {
-              id: user.id,
-              name: `${user.first_name} ${user.last_name}`,
-              email: user.email,
-              first_name: user.first_name,
-              last_name: user.last_name,
-              token: user.token,
-              role: user.role, // Asegúrate de incluir el rol si existe
-              ...user
-            };
-          }
-          
-          throw new Error("Datos de usuario incompletos");
+          return {
+            id: data.user.id.toString(),
+            email: data.user.email,
+            name: `${data.user.nombre} ${data.user.apellido}`,
+            firstName: data.user.nombre,
+            lastName: data.user.apellido,
+            role: data.user.role_id,
+            token: data.token
+          };
           
         } catch (error) {
-          // Lanzar error con mensaje personalizado
-          throw new Error(error.message || "Error en el servidor");
+          console.error('Error en authorize:', error);
+          throw new Error(error.message || 'No se pudo iniciar sesión');
         }
       }
     })
@@ -71,28 +49,51 @@ export const authOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.accessToken = user.token;
         token.user = {
           id: user.id,
-          name: user.name,
           email: user.email,
-          first_name: user.first_name,
-          last_name: user.last_name,
-          role: user.role, // Incluir el rol en el token
-          ...user
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role_id: user.role,
+          name: user.name,
+          token: user.token
         };
       }
       return token;
     },
     async session({ session, token }) {
-      session.accessToken = token.accessToken;
       session.user = token.user;
       return session;
+    },
+    async redirect({ url, baseUrl }) {
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      return baseUrl;
     }
   },
   pages: {
     signIn: "/login",
-    error: "/login?error=true" // Redirige a login con parámetro de error
+    signOut: "/login", // Especifica la página de logout
+    error: "/login?error=true"
+  },
+  session: {
+    strategy: "jwt",
+    maxAge: 24 * 60 * 60 // 24 horas
+  },
+  events: {
+    async signOut({ token }) {
+      // Evento que se dispara al hacer logout
+      try {
+        await fetch('http://localhost:4000/api/users/logout', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token.user?.token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+      } catch (error) {
+        console.error('Error durante logout en backend:', error);
+      }
+    }
   },
   debug: process.env.NODE_ENV === "development",
   secret: process.env.NEXTAUTH_SECRET
