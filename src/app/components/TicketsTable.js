@@ -342,7 +342,6 @@ const TicketsTable = () => {
                     <Column 
                         field="ticket" 
                         header="Ticket" 
-                        sortable 
                         body={(rowData) => (
                             <span className="whitespace-nowrap text-sm font-medium">
                                 {rowData.ticket}
@@ -351,8 +350,7 @@ const TicketsTable = () => {
                     />
                     <Column 
                         field="subject" 
-                        header="Asunto" 
-                        sortable 
+                        header="Asunto"  
                         body={(rowData) => (
                             <div className="line-clamp-2 text-sm">
                                 {cleanHtmlContent(rowData.subject)}
@@ -372,7 +370,6 @@ const TicketsTable = () => {
                     <Column 
                         field="created_by" 
                         header="Creado por" 
-                        sortable 
                         body={(rowData) => (
                             <span className="text-sm">
                                 {rowData.created_by}
@@ -382,7 +379,6 @@ const TicketsTable = () => {
                     <Column 
                         field="assigned_to" 
                         header="Asignado a" 
-                        sortable 
                         body={(rowData) => (
                             <span className="text-sm">
                                 {rowData.assigned_to || 'No asignado'}
@@ -392,7 +388,6 @@ const TicketsTable = () => {
                     <Column 
                         field="status" 
                         header="Estado" 
-                        sortable 
                         body={(rowData) => (
                             <Tag 
                                 value={rowData.status || 'Desconocido'} 
@@ -408,7 +403,6 @@ const TicketsTable = () => {
                    <Column 
                         field="created_at" 
                         header="Fecha creación" 
-                        sortable 
                         body={(rowData) => {
                             const date = new Date(rowData.created_at);
                             const formattedDate = date.toLocaleDateString('es-ES', {
@@ -433,7 +427,6 @@ const TicketsTable = () => {
                     <Column 
                         field="resolution_time" 
                         header="Tiempo resolución" 
-                        sortable 
                         body={(rowData) => (
                             <span className="text-sm">
                                 {rowData.resolution_time || 'N/A'}
