@@ -11,8 +11,6 @@ export const authOptions = {
       },
       async authorize(credentials) {
         try {
-          console.log('Intentando autenticar con:', credentials.email);
-          
           const res = await fetch('http://localhost:4000/api/users/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -23,7 +21,6 @@ export const authOptions = {
           });
 
           const data = await res.json();
-          console.log('Respuesta del backend:', data);
 
           if (!res.ok) {
             throw new Error(data.error || 'Error de autenticación');
@@ -66,22 +63,24 @@ export const authOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
+      // Permite redirecciones relativas y absolutas del mismo origen
       if (url.startsWith("/")) return `${baseUrl}${url}`;
+      else if (new URL(url).origin === baseUrl) return url;
       return baseUrl;
     }
   },
   pages: {
     signIn: "/login",
-    signOut: "/login", // Especifica la página de logout
-    error: "/login?error=true"
+    signOut: "/login",
+    error: "/login"
   },
   session: {
     strategy: "jwt",
-    maxAge: 24 * 60 * 60 // 24 horas
+    maxAge: 24 * 60 * 60, // 24 horas
+    updateAge: 24 * 60 * 60,
   },
   events: {
     async signOut({ token }) {
-      // Evento que se dispara al hacer logout
       try {
         await fetch('http://localhost:4000/api/users/logout', {
           method: 'POST',

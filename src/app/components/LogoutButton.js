@@ -14,35 +14,36 @@ export default function LogoutButton({ className = "" }) {
 
   const handleLogout = async () => {
     setLoading(true);
-    setVisible(false); // Cerrar diálogo inmediatamente
+    setVisible(false);
 
     try {
-      // 1. Mostrar Toast primero
+      // Mostrar Toast de confirmación
       toastRef.current?.show({
         severity: 'success',
         summary: 'Sesión cerrada',
         detail: 'Has salido del sistema correctamente',
-        life: 9000
+        life: 3000
       });
 
-      // 2. Esperar 500ms para asegurar que el Toast se muestra
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Cerrar sesión CON redirección explícita
+      await signOut({
+        redirect: false, // Desactivar redirección automática
+        callbackUrl: '/login' // Forzar URL limpia de redirección
+      });
 
-      // 3. Cerrar sesión (sin esperar, se ejecuta en segundo plano)
-      signOut({ redirect: false }).catch(console.error);
-
-      // 4. Redirigir después de 7 segundos (tiempo del Toast)
+      // Redirigir manualmente después de breve retraso
       setTimeout(() => {
         router.push('/login');
-      }, 9000);
+        router.refresh(); // Crucial: actualiza el estado de la app
+      }, 1000);
 
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error durante logout:', error);
       toastRef.current?.show({
         severity: 'error',
         summary: 'Error',
-        detail: 'Ocurrió un problema',
-        life: 9000
+        detail: 'Ocurrió un problema al cerrar sesión',
+        life: 5000
       });
     } finally {
       setLoading(false);
@@ -83,7 +84,7 @@ export default function LogoutButton({ className = "" }) {
       />
 
       <Dialog
-        header="Confirmar cierre"
+        header="Confirmar cierre de sesión"
         visible={visible}
         style={{ width: 'min(90vw, 400px)' }}
         footer={dialogFooter}
@@ -93,7 +94,7 @@ export default function LogoutButton({ className = "" }) {
       >
         <div className="flex align-items-center gap-3">
           <i className="pi pi-exclamation-circle text-2xl text-primary" />
-          <p>¿Estás seguro de salir del sistema?</p>
+          <p>¿Estás seguro de que deseas cerrar sesión?</p>
         </div>
       </Dialog>
     </>
